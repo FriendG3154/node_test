@@ -453,7 +453,7 @@ export default function Home() {
             </h1>
 
             {/* Subtitle */}
-            <p className="relative mt-6 overflow-hidden text-base font-medium tracking-[0.35em] text-[#D2AF64]/80 sm:text-lg">
+            <p className="relative mt-5 overflow-visible text-xl font-bold tracking-[0.4em] sm:text-2xl">
               <span className="shimmer-text inline-block">GINTEST</span>
             </p>
 
@@ -475,17 +475,19 @@ export default function Home() {
         .shimmer-text {
           background: linear-gradient(
             90deg,
-            rgba(138,109,53,0) 0%,
-            rgba(138,109,53,0) 30%,
-            rgba(240,215,160,0.7) 50%,
-            rgba(138,109,53,0) 70%,
-            rgba(138,109,53,0) 100%
+            rgba(130,95,50,0.85) 0%,
+            rgba(130,95,50,0.85) 25%,
+            rgba(255,235,195,0.95) 48%,
+            rgba(255,235,195,0.95) 52%,
+            rgba(130,95,50,0.85) 75%,
+            rgba(130,95,50,0.85) 100%
           );
-          background-size: 200% 100%;
+          background-size: 250% 100%;
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          animation: shimmer 5s ease-in-out infinite;
+          animation: shimmer 4s ease-in-out infinite;
+          filter: drop-shadow(0 1px 3px rgba(60,40,10,0.15));
         }
 
         @keyframes shimmer {
