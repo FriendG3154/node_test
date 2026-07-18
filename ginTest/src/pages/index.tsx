@@ -206,14 +206,13 @@ export default function Home() {
     // ---- sparkles ----
     const sparkles: Sparkle[] = [];
     let sparkCounter = 0;
-    let lastPathTime = 0;
-    const pathPoints: { x: number; y: number; time: number }[] = [];
-    const blobs: { x: number; y: number; r: number; vx: number; vy: number; hue: number; alpha: number }[] = [
-      { x: 0.2, y: 0.3, r: 140, vx: 0.12, vy: 0.08, hue: 350, alpha: 0.08 },
-      { x: 0.7, y: 0.6, r: 110, vx: -0.08, vy: 0.15, hue: 185, alpha: 0.07 },
-      { x: 0.4, y: 0.8, r: 160, vx: 0.1, vy: -0.06, hue: 45, alpha: 0.06 },
-      { x: 0.8, y: 0.2, r: 100, vx: -0.14, vy: 0.1, hue: 275, alpha: 0.07 },
-    ].map(b => ({ ...b, x: b.x * W(), y: b.y * H() }));
+    let prevX = -1;
+    let prevY = -1;
+    const trailCanvas = document.createElement("canvas");
+    const trailCtx = trailCanvas.getContext("2d")!;
+    function resizeTrail() { trailCanvas.width = W(); trailCanvas.height = H(); }
+    resizeTrail();
+    window.addEventListener("resize", resizeTrail);
 
     // ---- burst ----
     const crumpleFolds: CrumpleFold[] = [];
@@ -235,32 +234,23 @@ export default function Home() {
           hue: [350, 180, 45, 280][Math.floor(Math.random() * 4)]! + (Math.random() - 0.5) * 15,
         });
       }
-      // record mouse trail path
-      const _n = performance.now();
-      if (_n - lastPathTime > 25) {
-        lastPathTime = _n;
-        const _pp = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1] : null;
-        pathPoints.push({ x: e.clientX, y: e.clientY, time: _n });
-        if (_pp) {
-          const _dx = e.clientX - _pp.x, _dy = e.clientY - _pp.y;
-          const _dd = Math.sqrt(_dx*_dx + _dy*_dy);
-          if (_dd > 15) {
-            const _st = Math.floor(_dd / 8);
-            const _ia = pathPoints.length - 1;
-            for (let _s = 1; _s < _st; _s++) {
-              const _t = _s / _st;
-              pathPoints.splice(_ia, 0, {
-                x: _pp.x + _dx * _t,
-                y: _pp.y + _dy * _t,
-                time: _n,
-              });
-            }
-          }
+      // draw trail on offscreen canvas
+      if (prevX !== -1) {
+        const _dx = e.clientX - prevX, _dy = e.clientY - prevY;
+        const _dd = Math.sqrt(_dx*_dx + _dy*_dy);
+        if (_dd > 3) {
+          const _w = Math.min(8, 2 + _dd * 0.04);
+          trailCtx.beginPath();
+          trailCtx.moveTo(prevX, prevY);
+          trailCtx.lineTo(e.clientX, e.clientY);
+          trailCtx.strokeStyle = "hsla(28,55%,38%,0.2)";
+          trailCtx.lineWidth = _w;
+          trailCtx.lineCap = "round";
+          trailCtx.stroke();
         }
       }
-      while (pathPoints.length > 2 && _n - pathPoints[0]!.time > 1500) {
-        pathPoints.shift();
-      }
+      prevX = e.clientX;
+      prevY = e.clientY;
     };
     const onClick = (e: MouseEvent) => {
       const now = performance.now();
@@ -328,18 +318,6 @@ export default function Home() {
         // --- paper background ---
         if (paperDirty) updatePaper();
         ctx.drawImage(bgCanvas, 0, 0);
-
-        // --- floating blobs ---
-        for (const b of blobs) {
-          b.x += b.vx; b.y += b.vy;
-          if (b.x < -b.r || b.x > W() + b.r) b.vx *= -1;
-          if (b.y < -b.r || b.y > H() + b.r) b.vy *= -1;
-          var bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-          bg.addColorStop(0, "hsla(" + (b.hue + hueOff * 0.15) + ",70%,65%," + b.alpha + ")");
-          bg.addColorStop(1, "hsla(" + (b.hue + hueOff * 0.15) + ",70%,65%,0)");
-          ctx.fillStyle = bg;
-          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
-        }
 
         // --- dust motes ---
         const t = performance.now() * 0.001;
@@ -411,23 +389,13 @@ export default function Home() {
           ctx.restore();
         }
 
-        // --- mouse trail (continuous path) ---
-        var _pt = performance.now();
-        for (var i = 1; i < pathPoints.length; i++) {
-          var cr = pathPoints[i]!;
-          var pr = pathPoints[i - 1]!;
-          var tm = _pt - cr.time;
-          if (tm > 1500) continue;
-          var lf = 1 - tm / 1500;
-          var dx = cr.x - pr.x, dy = cr.y - pr.y;
-          var ln = Math.sqrt(dx*dx+dy*dy); if (ln < 1) continue;
-          var ag = Math.atan2(dy, dx);
-          var px = -Math.sin(ag) * 2.5;
-          var py = Math.cos(ag) * 2;
-          ctx.beginPath(); ctx.moveTo(pr.x-px, pr.y-py); ctx.lineTo(cr.x-px, cr.y-py);
-          ctx.strokeStyle = "hsla(" + (350 + hueOff * 0.3 + Math.sin(cr.x * 0.01 + _pt * 0.1) * 30) + ",80%,60%," + (lf * 0.5) + ")";
-          ctx.lineWidth = Math.min(7, 2 + ln * 0.08); ctx.stroke();
-        }
+                // --- mouse trail ---
+        trailCtx.globalCompositeOperation = "destination-out";
+        trailCtx.fillStyle = "rgba(0,0,0,0.03)";
+        trailCtx.fillRect(0, 0, W(), H());
+        trailCtx.globalCompositeOperation = "source-over";
+        ctx.drawImage(trailCanvas, 0, 0);
+
 
         // --- crumple folds (paper wrinkling) ---
         const now = performance.now();
@@ -487,6 +455,7 @@ export default function Home() {
       loop.cancel();
       hueAnim.cancel();
       window.removeEventListener("resize", resize);
+      window.removeEventListener("resize", resizeTrail);
       window.removeEventListener("mousemove", onMouse);
       window.removeEventListener("click", onClick);
       document.removeEventListener("mouseleave", onLeave);
