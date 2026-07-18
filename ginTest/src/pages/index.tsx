@@ -231,9 +231,26 @@ export default function Home() {
       }
       // record mouse trail path
       const _n = performance.now();
-      if (_n - lastPathTime > 35) {
+      if (_n - lastPathTime > 25) {
         lastPathTime = _n;
+        const _pp = pathPoints.length > 0 ? pathPoints[pathPoints.length - 1] : null;
         pathPoints.push({ x: e.clientX, y: e.clientY, time: _n });
+        if (_pp) {
+          const _dx = e.clientX - _pp.x, _dy = e.clientY - _pp.y;
+          const _dd = Math.sqrt(_dx*_dx + _dy*_dy);
+          if (_dd > 15) {
+            const _st = Math.floor(_dd / 8);
+            const _ia = pathPoints.length - 1;
+            for (let _s = 1; _s < _st; _s++) {
+              const _t = _s / _st;
+              pathPoints.splice(_ia, 0, {
+                x: _pp.x + _dx * _t,
+                y: _pp.y + _dy * _t,
+                time: _n,
+              });
+            }
+          }
+        }
       }
       while (pathPoints.length > 2 && _n - pathPoints[0]!.time > 1500) {
         pathPoints.shift();
@@ -385,16 +402,16 @@ export default function Home() {
           if (tm > 1500) continue;
           var lf = 1 - tm / 1500;
           var dx = cr.x - pr.x, dy = cr.y - pr.y;
-          if (Math.sqrt(dx*dx+dy*dy) < 2) continue;
+          var ln = Math.sqrt(dx*dx+dy*dy); if (ln < 1) continue;
           var ag = Math.atan2(dy, dx);
           var px = -Math.sin(ag) * 2;
           var py = Math.cos(ag) * 2;
           ctx.beginPath(); ctx.moveTo(pr.x+px, pr.y+py); ctx.lineTo(cr.x+px, cr.y+py);
-          ctx.strokeStyle = "rgba(235,210,155," + (lf * 0.35) + ")";
-          ctx.lineWidth = 3; ctx.stroke();
+          ctx.strokeStyle = "rgba(235,210,155," + (lf * 0.4) + ")";
+          ctx.lineWidth = Math.min(5, 2 + ln * 0.06); ctx.stroke();
           ctx.beginPath(); ctx.moveTo(pr.x-px, pr.y-py); ctx.lineTo(cr.x-px, cr.y-py);
-          ctx.strokeStyle = "rgba(155,115,55," + (lf * 0.3) + ")";
-          ctx.lineWidth = 3; ctx.stroke();
+          ctx.strokeStyle = "rgba(155,115,55," + (lf * 0.35) + ")";
+          ctx.lineWidth = Math.min(5, 2 + ln * 0.06); ctx.stroke();
         }
 
         // --- crumple folds (paper wrinkling) ---
