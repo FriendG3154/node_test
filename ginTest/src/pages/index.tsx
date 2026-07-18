@@ -404,14 +404,14 @@ export default function Home() {
           var dx = cr.x - pr.x, dy = cr.y - pr.y;
           var ln = Math.sqrt(dx*dx+dy*dy); if (ln < 1) continue;
           var ag = Math.atan2(dy, dx);
-          var px = -Math.sin(ag) * 2;
+          var px = -Math.sin(ag) * 2.5;
           var py = Math.cos(ag) * 2;
           ctx.beginPath(); ctx.moveTo(pr.x+px, pr.y+py); ctx.lineTo(cr.x+px, cr.y+py);
-          ctx.strokeStyle = "rgba(235,210,155," + (lf * 0.4) + ")";
-          ctx.lineWidth = Math.min(5, 2 + ln * 0.06); ctx.stroke();
+          ctx.strokeStyle = "rgba(255,245,220," + (lf * 0.7) + ")";
+          ctx.lineWidth = Math.min(7, 2 + ln * 0.08); ctx.stroke();
           ctx.beginPath(); ctx.moveTo(pr.x-px, pr.y-py); ctx.lineTo(cr.x-px, cr.y-py);
-          ctx.strokeStyle = "rgba(155,115,55," + (lf * 0.35) + ")";
-          ctx.lineWidth = Math.min(5, 2 + ln * 0.06); ctx.stroke();
+          ctx.strokeStyle = "rgba(100,60,20," + (lf * 0.5) + ")";
+          ctx.lineWidth = Math.min(7, 2 + ln * 0.08); ctx.stroke();
         }
 
         // --- crumple folds (paper wrinkling) ---
