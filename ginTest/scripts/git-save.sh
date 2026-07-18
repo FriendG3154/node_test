@@ -24,6 +24,11 @@ echo ""
 # 生成提交信息
 if [ -n "$1" ]; then
   MSG="$1"
+  # 如果还没有 codex: 前缀则添加
+  case "$MSG" in
+    codex:*) ;;
+    *) MSG="codex: $MSG" ;;
+  esac
 else
   # 判断变更类型
   TYPE="更新"
@@ -47,7 +52,7 @@ else
 
   STATS=$(git diff --stat --cached 2>/dev/null | tail -1)
 
-  MSG="${TYPE}
+  MSG="codex: ${TYPE}
 
 ## 变更内容
 ${DETAIL}
