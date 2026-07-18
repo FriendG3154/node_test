@@ -89,3 +89,17 @@ ginTest 是一个基于 T3 全家桶（create-t3-app v7.40）的 Next.js 全栈�
 5. 重要架构思路与技术选择
 6. 文件修改记录（最近重要变更）
 7. 已学到的经验教训 & 避坑记录
+
+## 任务结束自动提交钩子（重要）
+
+每次任务/指令完成后，Agent **必须**执行以下操作：
+
+1. 运行 `npm run typecheck` 确认编译无报错
+2. 运行 `bash scripts/git-save.sh "类型: 变更说明"` 自动提交并推送
+   - 提交信息格式：`类型: 简短说明`
+   - 类型参考：`feat` / `fix` / `chore` / `refactor` / `docs` / `style`
+   - 示例：`bash scripts/git-save.sh "feat: add user profile page"`
+3. 确认命令输出正常（无错误退出码）
+4. 在回复结尾告知已提交（如 "✓ 已提交并推送"）
+
+如果当前没有 git remote，脚本会只提交不推送，并提示设置远程仓库。

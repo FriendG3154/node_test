@@ -82,3 +82,27 @@ This repository uses three Markdown files for agent context persistence:
 3. **`AGENTS.md` (this file)** — Contributor-facing repository guidelines covering structure, commands, conventions, and onboarding.
 
 **Session startup protocol**: At the start of every new session, the agent MUST read all three Markdown files (CLAUDE.md, project-context.md, and AGENTS.md) before responding, and confirm they have been loaded in the first message.
+
+## Automated Commit & Push Workflow
+
+After every completed task, the agent MUST run the helper script to commit and push changes:
+
+```bash
+scripts/git-save.sh "type: description"
+```
+
+- Before committing, run `npm run typecheck` to verify no type errors.
+- The script stages all tracked changes, commits with the given message, and pushes if a remote origin is configured.
+- If no remote exists, it commits locally and prints a reminder.
+- Commit message convention: `type: short description` where type is `feat`, `fix`, `chore`, `refactor`, `docs`, or `style`.
+
+This is enforced by `CLAUDE.md` — see that file for the exact behavioral rule.
+
+### Git-Save Helper
+
+A convenience script (`scripts/git-save.sh`) automates the full workflow:
+
+1. Detects changes via `git status --porcelain`
+2. Stages all with `git add --all`
+3. Commits with the provided message (or auto-generates one from changed files)
+4. Pushes if a remote `origin` exists

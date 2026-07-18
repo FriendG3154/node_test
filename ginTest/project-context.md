@@ -2,6 +2,7 @@
 
 **最后更新时间**：2026-07-18 01:25
 **最后更新时间**：2026-07-18 14:25
+**最后更新时间**：2026-07-18 14:35
 
 ## 1. 项目目标与当前范围
 
@@ -23,6 +24,7 @@
 - [x] 前端页面移除登录/注销 UI 和 AuthShowcase 组件
 - [x] 编译验证通过（`npm run typecheck` 无报错）
 - [x] 上下文持久化体系搭建：创建 AGENTS.md（贡献指南），更新 CLAUDE.md（增加会话启动协议和 hooks 说明）
+- [x] 任务结束自动提交钩子：创建 `scripts/git-save.sh` 脚本，更新 CLAUDE.md 和 AGENTS.md 加入提交/推送行为规则
 
 ## 4. 待办事项 & 下一步计划
 
@@ -53,6 +55,9 @@
 - `src/app/api/auth/[...nextauth]/` → 目录及文件删除
 - `AGENTS.md` → 新建 Repository Guidelines 贡献指南
 - `CLAUDE.md` → 新增「会话启动协议」和「上下文文件体系（Hooks）」章节
+- `CLAUDE.md` → 新增「任务结束自动提交钩子」章节
+- `AGENTS.md` → 新增「Automated Commit & Push Workflow」章节
+- `scripts/git-save.sh` → 新建自动提交推送辅助脚本
 
 ## 7. 已学到的经验教训 & 避坑记录
 
@@ -60,3 +65,4 @@
 - 移除认证模块时需联动清理：依赖 → schema 表 → tRPC 上下文 → 页面组件 → 环境变量，任一环节遗漏都会导致编译错误
 - `npm run typecheck` 是验证清理是否彻底的最快手段
 - 三个 Markdown 文件构成分层 hooks 体系：CLAUDE.md（固定行为）← AGENTS.md（仓库规范）← project-context.md（动态快照）
+- 自动 git 推送依赖远程仓库配置（`git remote add origin <url>`），脚本会优雅降级：无 remote 时只提交不推送
