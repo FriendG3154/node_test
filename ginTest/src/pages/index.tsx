@@ -28,6 +28,7 @@ interface CrumpleFold {
   cx: number; cy: number;
   x2: number; y2: number;
   time: number;
+  duration: number;
 }
 
 // ---------- paper texture helpers ----------
@@ -205,6 +206,7 @@ export default function Home() {
     // ---- sparkles ----
     const sparkles: Sparkle[] = [];
     let sparkCounter = 0;
+    let lastMouseFoldTime = 0;
 
     // ---- burst ----
     const crumpleFolds: CrumpleFold[] = [];
@@ -226,6 +228,27 @@ export default function Home() {
           hue: Math.random() * 15 + 30,
         });
       }
+      // mouse trail folds
+      const _now = performance.now();
+      if (_now - lastMouseFoldTime > 80 && crumpleFolds.length < 80) {
+        lastMouseFoldTime = _now;
+        for (let f = 0; f < 2; f++) {
+          const angle = Math.random() * Math.PI * 2;
+          const len = 20 + Math.random() * 40;
+          const curve = (Math.random() - 0.5) * 20;
+          const perp = angle + Math.PI / 2;
+          crumpleFolds.push({
+            x1: e.clientX + (Math.random() - 0.5) * 6,
+            y1: e.clientY + (Math.random() - 0.5) * 6,
+            cx: e.clientX + Math.cos(angle) * len * 0.5 + Math.cos(perp) * curve,
+            cy: e.clientY + Math.sin(angle) * len * 0.5 + Math.sin(perp) * curve,
+            x2: e.clientX + Math.cos(angle) * len,
+            y2: e.clientY + Math.sin(angle) * len,
+            time: _now,
+            duration: 1200 + Math.random() * 600,
+          });
+        }
+      }
     };
     const onClick = (e: MouseEvent) => {
       const now = performance.now();
@@ -244,6 +267,7 @@ export default function Home() {
           x2: e.clientX + Math.cos(angle) * len,
           y2: e.clientY + Math.sin(angle) * len,
           time: now,
+        duration: 3000,
         });
       }
     };
@@ -343,7 +367,7 @@ export default function Home() {
         for (let i = crumpleFolds.length - 1; i >= 0; i--) {
           const cf = crumpleFolds[i]!;
           const elapsed = now - cf.time;
-          const life = Math.max(0, 1 - elapsed / 3000);
+          const life = Math.max(0, 1 - elapsed / cf.duration);
           if (life <= 0) { crumpleFolds.splice(i, 1); continue; }
 
           ctx.beginPath();
