@@ -207,6 +207,8 @@ export default function Home() {
     const sparkles: Sparkle[] = [];
     let sparkCounter = 0;
     let lastMouseFoldTime = 0;
+    let prevMouseX = -1;
+    let prevMouseY = -1;
 
     // ---- burst ----
     const crumpleFolds: CrumpleFold[] = [];
@@ -228,27 +230,31 @@ export default function Home() {
           hue: Math.random() * 15 + 30,
         });
       }
-      // mouse trail folds
+      // mouse trail folds (along movement path)
       const _now = performance.now();
-      if (_now - lastMouseFoldTime > 80 && crumpleFolds.length < 80) {
+      const _dx = e.clientX - prevMouseX;
+      const _dy = e.clientY - prevMouseY;
+      const _dist = Math.sqrt(_dx * _dx + _dy * _dy);
+      if (prevMouseX !== -1 && _dist > 8 && _now - lastMouseFoldTime > 60 && crumpleFolds.length < 100) {
         lastMouseFoldTime = _now;
-        for (let f = 0; f < 2; f++) {
-          const angle = Math.random() * Math.PI * 2;
-          const len = 20 + Math.random() * 40;
-          const curve = (Math.random() - 0.5) * 20;
-          const perp = angle + Math.PI / 2;
-          crumpleFolds.push({
-            x1: e.clientX + (Math.random() - 0.5) * 6,
-            y1: e.clientY + (Math.random() - 0.5) * 6,
-            cx: e.clientX + Math.cos(angle) * len * 0.5 + Math.cos(perp) * curve,
-            cy: e.clientY + Math.sin(angle) * len * 0.5 + Math.sin(perp) * curve,
-            x2: e.clientX + Math.cos(angle) * len,
-            y2: e.clientY + Math.sin(angle) * len,
-            time: _now,
-            duration: 1200 + Math.random() * 600,
-          });
-        }
+        const _midX = (prevMouseX + e.clientX) / 2;
+        const _midY = (prevMouseY + e.clientY) / 2;
+        const _angle = Math.atan2(_dy, _dx);
+        const _perp = _angle + Math.PI / 2;
+        const _curve = (Math.random() - 0.5) * 12;
+        crumpleFolds.push({
+          x1: prevMouseX,
+          y1: prevMouseY,
+          cx: _midX + Math.cos(_perp) * _curve,
+          cy: _midY + Math.sin(_perp) * _curve,
+          x2: e.clientX,
+          y2: e.clientY,
+          time: _now,
+          duration: 1000 + Math.random() * 500,
+        });
       }
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
     };
     const onClick = (e: MouseEvent) => {
       const now = performance.now();
@@ -271,7 +277,32 @@ export default function Home() {
         });
       }
     };
-    const onLeave = () => { mouseRef.current = { x: -999, y: -999 }; };
+    const onLeave = () => {
+      const _lx = mouseRef.current.x;
+      const _ly = mouseRef.current.y;
+      mouseRef.current = { x: -999, y: -999 };
+      if (_lx !== -999) {
+        const _now = performance.now();
+        const _count = 6 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < _count; i++) {
+          const _angle = Math.random() * Math.PI * 2;
+          const _len = 40 + Math.random() * 80;
+          const _curve = (Math.random() - 0.5) * 25;
+          const _perp = _angle + Math.PI / 2;
+          crumpleFolds.push({
+            x1: _lx + (Math.random() - 0.5) * 8,
+            y1: _ly + (Math.random() - 0.5) * 8,
+            cx: _lx + Math.cos(_angle) * _len * 0.5 + Math.cos(_perp) * _curve,
+            cy: _ly + Math.sin(_angle) * _len * 0.5 + Math.sin(_perp) * _curve,
+            x2: _lx + Math.cos(_angle) * _len,
+            y2: _ly + Math.sin(_angle) * _len,
+            time: _now,
+            duration: 3000,
+          });
+        }
+        ripple = { x: _lx, y: _ly, time: _now, active: true };
+      }
+    };
 
     window.addEventListener("mousemove", onMouse);
     window.addEventListener("click", onClick);
