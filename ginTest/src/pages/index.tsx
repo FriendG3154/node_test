@@ -23,14 +23,11 @@ interface Sparkle {
   size: number; hue: number;
 }
 
-interface BurstP {
-  x: number; y: number;
-  endX: number; endY: number;
-  progress: number;
-  size: number; hue: number;
-  rot: number;       // current rotation
-  rotSpeed: number;  // rotation speed
-  wobble: number;    // phase offset for drifting
+interface CrumpleFold {
+  x1: number; y1: number;
+  cx: number; cy: number;
+  x2: number; y2: number;
+  time: number;
 }
 
 // ---------- paper texture helpers ----------
@@ -101,7 +98,6 @@ function generatePaper(bgCtx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 // ---------- draw helpers ----------
-const outCubic = (t: number) => 1 - (1 - t) ** 3;
 
 function drawRect(ctx: CanvasRenderingContext2D, cx: number, cy: number, w: number, h: number) {
   ctx.beginPath();
@@ -211,9 +207,8 @@ export default function Home() {
     let sparkCounter = 0;
 
     // ---- burst ----
-    const burstPs: BurstP[] = [];
-    let ring = { x: 0, y: 0, progress: 1 };
-    let time = 0;
+    const crumpleFolds: CrumpleFold[] = [];
+    let ripple = { x: 0, y: 0, time: 0, active: false };
 
     // ---- hue state ----
     const hueState = { offset: 0 };
@@ -233,21 +228,22 @@ export default function Home() {
       }
     };
     const onClick = (e: MouseEvent) => {
-      ring = { x: e.clientX, y: e.clientY, progress: 0 };
-      const count = 30 + Math.floor(Math.random() * 15);
+      const now = performance.now();
+      ripple = { x: e.clientX, y: e.clientY, time: now, active: true };
+      const count = 8 + Math.floor(Math.random() * 6);
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = 1.5 + Math.random() * 2.5;
-        burstPs.push({
-          x: e.clientX, y: e.clientY,
-          endX: e.clientX + Math.cos(angle) * speed * 70,
-          endY: e.clientY + Math.sin(angle) * speed * 70 + 60,
-          progress: 0,
-          size: Math.random() * 6 + 4,
-          hue: Math.random() * 20 + 30,
-          rot: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() - 0.5) * 0.08,
-          wobble: Math.random() * Math.PI * 2,
+        const len = 60 + Math.random() * 120;
+        const curve = (Math.random() - 0.5) * 40;
+        const perp = angle + Math.PI / 2;
+        crumpleFolds.push({
+          x1: e.clientX + (Math.random() - 0.5) * 10,
+          y1: e.clientY + (Math.random() - 0.5) * 10,
+          cx: e.clientX + Math.cos(angle) * len * 0.5 + Math.cos(perp) * curve,
+          cy: e.clientY + Math.sin(angle) * len * 0.5 + Math.sin(perp) * curve,
+          x2: e.clientX + Math.cos(angle) * len,
+          y2: e.clientY + Math.sin(angle) * len,
+          time: now,
         });
       }
     };
@@ -265,7 +261,6 @@ export default function Home() {
         const hueOff = hueState.offset;
         const mx = mouseRef.current.x;
         const my = mouseRef.current.y;
-        time += 0.016;
 
         ctx.clearRect(0, 0, W(), H());
 
@@ -343,50 +338,48 @@ export default function Home() {
           ctx.restore();
         }
 
-        // --- burst particles (paper scraps) ---
-        for (let i = burstPs.length - 1; i >= 0; i--) {
-          const bp = burstPs[i]!;
-          bp.progress = Math.min(bp.progress + 0.018, 1);
-          const e = outCubic(bp.progress);
-          bp.x += (bp.endX - bp.x) * e * 0.08;
-          bp.y += (bp.endY - bp.y) * e * 0.08;
-          // gravity
-          bp.y += 0.15;
-          // rotation
-          bp.rot += bp.rotSpeed;
-          // drift
-          bp.x += Math.sin(time * 2 + bp.wobble) * 0.3;
+        // --- crumple folds (paper wrinkling) ---
+        const now = performance.now();
+        for (let i = crumpleFolds.length - 1; i >= 0; i--) {
+          const cf = crumpleFolds[i]!;
+          const elapsed = now - cf.time;
+          const life = Math.max(0, 1 - elapsed / 3000);
+          if (life <= 0) { crumpleFolds.splice(i, 1); continue; }
 
-          if (bp.progress >= 1 || bp.y > H() + 20) { burstPs.splice(i, 1); continue; }
-          const life = 1 - bp.progress;
-          const h = bp.hue + hueOff;
-          ctx.save();
-          ctx.translate(bp.x, bp.y);
-          ctx.rotate(bp.rot);
+          ctx.beginPath();
+          ctx.moveTo(cf.x1, cf.y1);
+          ctx.quadraticCurveTo(cf.cx, cf.cy, cf.x2, cf.y2);
+          ctx.strokeStyle = "rgba(235,210,155," + (life * 0.15) + ")";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
 
-          const sz = bp.size * (0.3 + 0.7 * life);
-          // draw as small paper rectangle with slight color variation
-          // lighter front side
-          ctx.fillStyle = `hsla(${h}, 45%, 55%, ${life * 0.6})`;
-          drawRect(ctx, 0, 0, sz, sz * 0.6);
-          ctx.fill();
-          // darker edge strip
-          ctx.fillStyle = `hsla(${h}, 40%, 30%, ${life * 0.35})`;
-          drawRect(ctx, 0, 0, sz, 1.5);
-          ctx.fill();
-
-          ctx.restore();
+          ctx.beginPath();
+          ctx.moveTo(cf.x1 + 1.5, cf.y1 + 1.5);
+          ctx.quadraticCurveTo(cf.cx + 1.5, cf.cy + 1.5, cf.x2 + 1.5, cf.y2 + 1.5);
+          ctx.strokeStyle = "rgba(155,115,55," + (life * 0.15) + ")";
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
         }
 
-        // --- burst ring ---
-        if (ring.progress < 1) {
-          ring.progress += 0.03;
-          const rl = 1 - ring.progress;
-          ctx.beginPath();
-          ctx.arc(ring.x, ring.y, ring.progress * 180, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(215,185,115,${rl * 0.3})`;
-          ctx.lineWidth = rl * 1.5 + 0.5;
-          ctx.stroke();
+        // --- ripple circle ---
+        if (ripple.active) {
+          const elapsed = now - ripple.time;
+          const life = Math.max(0, 1 - elapsed / 3000);
+          if (life > 0) {
+            const radius = Math.min(elapsed * 0.08, 120);
+            ctx.beginPath();
+            ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(235,210,155," + (life * 0.1) + ")";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(ripple.x + 1, ripple.y + 1, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = "rgba(155,115,55," + (life * 0.1) + ")";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          } else {
+            ripple.active = false;
+          }
         }
       },
     });
@@ -463,10 +456,6 @@ export default function Home() {
               <span className="bottom-dot inline-block h-2 w-2 rotate-45 border border-yellow-600/60 bg-yellow-600/25 shadow-[0_0_6px_rgba(215,185,115,0.2)]" />
               <span className="inline-block h-[1px] w-14 bg-gradient-to-l from-transparent to-yellow-600/50" />
             </div>
-
-            <p className="mt-8 text-[11px] tracking-[0.45em] text-[#D2AF64]/30 font-medium">
-              ✦ CLICK TO BURST ✦
-            </p>
           </div>
         </div>
       </div>
