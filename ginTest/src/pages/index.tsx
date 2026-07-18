@@ -44,21 +44,21 @@ function drawFold(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: num
   const px = -Math.sin(angle) * 1.5;
   const py = Math.cos(angle) * 1.5;
   ctx.beginPath(); ctx.moveTo(x1 + px, y1 + py); ctx.lineTo(x2 + px, y2 + py);
-  ctx.strokeStyle = "rgba(200,175,115,0.10)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = "rgba(235,210,155,0.10)"; ctx.lineWidth = 1; ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x1 - px, y1 - py); ctx.lineTo(x2 - px, y2 - py);
-  ctx.strokeStyle = "rgba(110,80,30,0.10)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = "rgba(160,120,55,0.10)"; ctx.lineWidth = 1; ctx.stroke();
 }
 
 function generatePaper(bgCtx: CanvasRenderingContext2D, w: number, h: number) {
-  const base = [138, 109, 53];
+  const base = [210, 175, 100];
   bgCtx.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`;
   bgCtx.fillRect(0, 0, w, h);
 
   // vignette
   const vig = bgCtx.createRadialGradient(w * 0.5, h * 0.5, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.7);
-  vig.addColorStop(0, "rgba(185,160,105,0.06)");
-  vig.addColorStop(0.6, "rgba(130,100,45,0.03)");
-  vig.addColorStop(1, "rgba(80,55,20,0.07)");
+  vig.addColorStop(0, "rgba(235,210,155,0.06)");
+  vig.addColorStop(0.6, "rgba(185,150,85,0.03)");
+  vig.addColorStop(1, "rgba(115,80,30,0.07)");
   bgCtx.fillStyle = vig;
   bgCtx.fillRect(0, 0, w, h);
 
@@ -74,15 +74,15 @@ function generatePaper(bgCtx: CanvasRenderingContext2D, w: number, h: number) {
       const seed = r * cols + c;
 
       // edge shadow
-      bgCtx.fillStyle = "rgba(100,75,30,0.04)";
+      bgCtx.fillStyle = "rgba(155,115,55,0.04)";
       bgCtx.fillRect(tx, ty, 1.5, tile + 2);
       bgCtx.fillRect(tx, ty, tile + 2, 1.5);
-      bgCtx.fillStyle = "rgba(200,175,115,0.03)";
+      bgCtx.fillStyle = "rgba(235,210,155,0.03)";
       bgCtx.fillRect(tx + tile - 1, ty, 1.5, tile + 2);
       bgCtx.fillRect(tx, ty + tile - 1, tile + 2, 1.5);
 
       // paper edge line
-      bgCtx.strokeStyle = "rgba(120,95,45,0.07)";
+      bgCtx.strokeStyle = "rgba(170,135,70,0.07)";
       bgCtx.lineWidth = 0.5;
       bgCtx.beginPath(); bgCtx.moveTo(tx, ty); bgCtx.lineTo(tx + tile, ty); bgCtx.stroke();
       bgCtx.beginPath(); bgCtx.moveTo(tx, ty); bgCtx.lineTo(tx, ty + tile); bgCtx.stroke();
@@ -279,7 +279,7 @@ export default function Home() {
           const a = s.alpha * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(50,38,18,${a * 0.5})`;
+          ctx.fillStyle = `rgba(85,60,25,${a * 0.5})`;
           ctx.fill();
         }
 
@@ -309,7 +309,7 @@ export default function Home() {
           // glow halo
           ctx.beginPath();
           ctx.arc(0, 0, p.size * 1.8, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(80,55,20,0.05)`;
+          ctx.fillStyle = `rgba(115,80,30,0.05)`;
           ctx.fill();
 
           if (p.shape === "star") {
@@ -384,7 +384,7 @@ export default function Home() {
           const rl = 1 - ring.progress;
           ctx.beginPath();
           ctx.arc(ring.x, ring.y, ring.progress * 180, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(180,150,90,${rl * 0.3})`;
+          ctx.strokeStyle = `rgba(215,185,115,${rl * 0.3})`;
           ctx.lineWidth = rl * 1.5 + 0.5;
           ctx.stroke();
         }
@@ -415,7 +415,7 @@ export default function Home() {
         <title>Hello World ✦ ginTest</title>
         <meta name="description" content="Hello World — ginTest" />
       </Head>
-      <div className="relative min-h-screen overflow-hidden bg-[#F0E8D8] font-sans selection:bg-yellow-800/30">
+      <div className="relative min-h-screen overflow-hidden bg-[#EDE0CC] font-sans selection:bg-yellow-700/25">
         {/* Paper grain overlay */}
         <div className="pointer-events-none fixed inset-0 z-[5] opacity-[0.055] mix-blend-multiply"
              style={{
@@ -425,7 +425,7 @@ export default function Home() {
         {/* Fiber lines */}
         <div className="pointer-events-none fixed inset-0 z-[4] opacity-[0.012] mix-blend-multiply"
              style={{
-               backgroundImage: "repeating-linear-gradient(75deg, transparent, transparent 30px, rgba(100,60,20,0.5) 30px, rgba(100,60,20,0.5) 31px)",
+               backgroundImage: "repeating-linear-gradient(75deg, transparent, transparent 30px, rgba(140,100,50,0.4) 30px, rgba(140,100,50,0.4) 31px)",
              }} />
 
         <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-[3]" />
@@ -438,9 +438,9 @@ export default function Home() {
           >
             {/* Top accent */}
             <div className="mb-6 flex items-center justify-center gap-3">
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-yellow-700/60 to-transparent" />
-              <span className="top-dot inline-block h-2.5 w-2.5 rotate-45 border border-yellow-700/70 bg-yellow-700/20 shadow-[0_0_8px_rgba(180,140,60,0.3)]" />
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-yellow-700/60 to-transparent" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-yellow-600/60 to-transparent" />
+              <span className="top-dot inline-block h-2.5 w-2.5 rotate-45 border border-yellow-600/70 bg-yellow-600/20 shadow-[0_0_8px_rgba(215,185,115,0.3)]" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-yellow-600/60 to-transparent" />
             </div>
 
             {/* Title */}
@@ -453,18 +453,18 @@ export default function Home() {
             </h1>
 
             {/* Subtitle */}
-            <p className="relative mt-6 overflow-hidden text-base font-medium tracking-[0.35em] text-[#8A6D35]/80 sm:text-lg">
+            <p className="relative mt-6 overflow-hidden text-base font-medium tracking-[0.35em] text-[#D2AF64]/80 sm:text-lg">
               <span className="shimmer-text inline-block">GINTEST</span>
             </p>
 
             {/* Bottom accent */}
             <div className="mt-10 flex items-center justify-center gap-3">
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent to-yellow-700/50" />
-              <span className="bottom-dot inline-block h-2 w-2 rotate-45 border border-yellow-700/60 bg-yellow-700/25 shadow-[0_0_6px_rgba(180,140,60,0.2)]" />
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-l from-transparent to-yellow-700/50" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent to-yellow-600/50" />
+              <span className="bottom-dot inline-block h-2 w-2 rotate-45 border border-yellow-600/60 bg-yellow-600/25 shadow-[0_0_6px_rgba(215,185,115,0.2)]" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-l from-transparent to-yellow-600/50" />
             </div>
 
-            <p className="mt-8 text-[11px] tracking-[0.45em] text-[#8A6D35]/30 font-medium">
+            <p className="mt-8 text-[11px] tracking-[0.45em] text-[#D2AF64]/30 font-medium">
               ✦ CLICK TO BURST ✦
             </p>
           </div>
@@ -477,7 +477,7 @@ export default function Home() {
             90deg,
             rgba(138,109,53,0) 0%,
             rgba(138,109,53,0) 30%,
-            rgba(200,170,110,0.7) 50%,
+            rgba(240,215,160,0.7) 50%,
             rgba(138,109,53,0) 70%,
             rgba(138,109,53,0) 100%
           );
@@ -494,8 +494,8 @@ export default function Home() {
         }
 
         @keyframes dot-pulse {
-          0%, 100% { opacity: 0.5; box-shadow: 0 0 6px rgba(180,140,60,0.2); }
-          50%      { opacity: 0.9; box-shadow: 0 0 16px rgba(180,140,60,0.45); }
+          0%, 100% { opacity: 0.5; box-shadow: 0 0 6px rgba(215,185,115,0.2); }
+          50%      { opacity: 0.9; box-shadow: 0 0 16px rgba(215,185,115,0.45); }
         }
         .top-dot, .bottom-dot {
           animation: dot-pulse 4s ease-in-out infinite;
