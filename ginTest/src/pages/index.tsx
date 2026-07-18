@@ -406,9 +406,6 @@ export default function Home() {
           var ag = Math.atan2(dy, dx);
           var px = -Math.sin(ag) * 2.5;
           var py = Math.cos(ag) * 2;
-          ctx.beginPath(); ctx.moveTo(pr.x+px, pr.y+py); ctx.lineTo(cr.x+px, cr.y+py);
-          ctx.strokeStyle = "rgba(255,245,220," + (lf * 0.7) + ")";
-          ctx.lineWidth = Math.min(7, 2 + ln * 0.08); ctx.stroke();
           ctx.beginPath(); ctx.moveTo(pr.x-px, pr.y-py); ctx.lineTo(cr.x-px, cr.y-py);
           ctx.strokeStyle = "rgba(100,60,20," + (lf * 0.5) + ")";
           ctx.lineWidth = Math.min(7, 2 + ln * 0.08); ctx.stroke();
