@@ -216,7 +216,6 @@ export default function Home() {
 
     // ---- burst ----
     const crumpleFolds: CrumpleFold[] = [];
-    let ripple = { x: 0, y: 0, time: 0, active: false };
 
     // ---- hue state ----
     const hueState = { offset: 0 };
@@ -254,22 +253,23 @@ export default function Home() {
     };
     const onClick = (e: MouseEvent) => {
       const now = performance.now();
-      ripple = { x: e.clientX, y: e.clientY, time: now, active: true };
-      const count = 8 + Math.floor(Math.random() * 6);
+      const count = 6 + Math.floor(Math.random() * 5);
       for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const len = 60 + Math.random() * 120;
-        const curve = (Math.random() - 0.5) * 40;
-        const perp = angle + Math.PI / 2;
+        const _cx = e.clientX + (Math.random() - 0.5) * 10;
+        const _cy = e.clientY + (Math.random() - 0.5) * 10;
+        const _a = Math.random() * Math.PI * 2;
+        const _ln = 40 + Math.random() * 80;
+        const _cv = (Math.random() - 0.5) * 25;
+        const _pp = _a + Math.PI / 2;
         crumpleFolds.push({
-          x1: e.clientX + (Math.random() - 0.5) * 10,
-          y1: e.clientY + (Math.random() - 0.5) * 10,
-          cx: e.clientX + Math.cos(angle) * len * 0.5 + Math.cos(perp) * curve,
-          cy: e.clientY + Math.sin(angle) * len * 0.5 + Math.sin(perp) * curve,
-          x2: e.clientX + Math.cos(angle) * len,
-          y2: e.clientY + Math.sin(angle) * len,
+          x1: _cx + (Math.random() - 0.5) * 6,
+          y1: _cy + (Math.random() - 0.5) * 6,
+          cx: _cx + Math.cos(_a) * _ln * 0.5 + Math.cos(_pp) * _cv,
+          cy: _cy + Math.sin(_a) * _ln * 0.5 + Math.sin(_pp) * _cv,
+          x2: _cx + Math.cos(_a) * _ln,
+          y2: _cy + Math.sin(_a) * _ln,
           time: now,
-        duration: 3000,
+          duration: 3000,
         });
       }
     };
@@ -278,25 +278,26 @@ export default function Home() {
       const _ly = mouseRef.current.y;
       mouseRef.current = { x: -999, y: -999 };
       if (_lx !== -999) {
-        const _now = performance.now();
-        const _count = 6 + Math.floor(Math.random() * 5);
-        for (let i = 0; i < _count; i++) {
-          const _angle = Math.random() * Math.PI * 2;
-          const _len = 40 + Math.random() * 80;
-          const _curve = (Math.random() - 0.5) * 25;
-          const _perp = _angle + Math.PI / 2;
+        const now = performance.now();
+        const count = 6 + Math.floor(Math.random() * 5);
+        for (let i = 0; i < count; i++) {
+          const _cx = _lx + (Math.random() - 0.5) * 10;
+          const _cy = _ly + (Math.random() - 0.5) * 10;
+          const _a = Math.random() * Math.PI * 2;
+          const _ln = 40 + Math.random() * 80;
+          const _cv = (Math.random() - 0.5) * 25;
+          const _pp = _a + Math.PI / 2;
           crumpleFolds.push({
-            x1: _lx + (Math.random() - 0.5) * 8,
-            y1: _ly + (Math.random() - 0.5) * 8,
-            cx: _lx + Math.cos(_angle) * _len * 0.5 + Math.cos(_perp) * _curve,
-            cy: _ly + Math.sin(_angle) * _len * 0.5 + Math.sin(_perp) * _curve,
-            x2: _lx + Math.cos(_angle) * _len,
-            y2: _ly + Math.sin(_angle) * _len,
-            time: _now,
+            x1: _cx + (Math.random() - 0.5) * 6,
+            y1: _cy + (Math.random() - 0.5) * 6,
+            cx: _cx + Math.cos(_a) * _ln * 0.5 + Math.cos(_pp) * _cv,
+            cy: _cy + Math.sin(_a) * _ln * 0.5 + Math.sin(_pp) * _cv,
+            x2: _cx + Math.cos(_a) * _ln,
+            y2: _cy + Math.sin(_a) * _ln,
+            time: now,
             duration: 3000,
           });
         }
-        ripple = { x: _lx, y: _ly, time: _now, active: true };
       }
     };
 
@@ -420,26 +421,7 @@ export default function Home() {
           ctx.stroke();
         }
 
-        // --- ripple circle ---
-        if (ripple.active) {
-          const elapsed = now - ripple.time;
-          const life = Math.max(0, 1 - elapsed / 3000);
-          if (life > 0) {
-            const radius = Math.min(elapsed * 0.08, 120);
-            ctx.beginPath();
-            ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(235,210,155," + (life * 0.1) + ")";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(ripple.x + 1, ripple.y + 1, radius, 0, Math.PI * 2);
-            ctx.strokeStyle = "rgba(155,115,55," + (life * 0.1) + ")";
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          } else {
-            ripple.active = false;
-          }
-        }
+
       },
     });
 
