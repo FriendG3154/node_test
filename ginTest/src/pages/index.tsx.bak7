@@ -206,8 +206,7 @@ export default function Home() {
     // ---- sparkles ----
     const sparkles: Sparkle[] = [];
     let sparkCounter = 0;
-    let lastPathTime = 0;
-    const pathPoints: { x: number; y: number; time: number }[] = [];
+    let lastMouseFoldTime = 0;
 
     // ---- burst ----
     const crumpleFolds: CrumpleFold[] = [];
@@ -229,14 +228,26 @@ export default function Home() {
           hue: Math.random() * 15 + 30,
         });
       }
-      // record mouse trail path
-      const _n = performance.now();
-      if (_n - lastPathTime > 35) {
-        lastPathTime = _n;
-        pathPoints.push({ x: e.clientX, y: e.clientY, time: _n });
-      }
-      while (pathPoints.length > 2 && _n - pathPoints[0]!.time > 1500) {
-        pathPoints.shift();
+      // mouse trail folds
+      const _now = performance.now();
+      if (_now - lastMouseFoldTime > 80 && crumpleFolds.length < 80) {
+        lastMouseFoldTime = _now;
+        for (let f = 0; f < 2; f++) {
+          const angle = Math.random() * Math.PI * 2;
+          const len = 20 + Math.random() * 40;
+          const curve = (Math.random() - 0.5) * 20;
+          const perp = angle + Math.PI / 2;
+          crumpleFolds.push({
+            x1: e.clientX + (Math.random() - 0.5) * 6,
+            y1: e.clientY + (Math.random() - 0.5) * 6,
+            cx: e.clientX + Math.cos(angle) * len * 0.5 + Math.cos(perp) * curve,
+            cy: e.clientY + Math.sin(angle) * len * 0.5 + Math.sin(perp) * curve,
+            x2: e.clientX + Math.cos(angle) * len,
+            y2: e.clientY + Math.sin(angle) * len,
+            time: _now,
+            duration: 1200 + Math.random() * 600,
+          });
+        }
       }
     };
     const onClick = (e: MouseEvent) => {
@@ -260,32 +271,7 @@ export default function Home() {
         });
       }
     };
-    const onLeave = () => {
-      const _lx = mouseRef.current.x;
-      const _ly = mouseRef.current.y;
-      mouseRef.current = { x: -999, y: -999 };
-      if (_lx !== -999) {
-        const _now = performance.now();
-        const _count = 6 + Math.floor(Math.random() * 5);
-        for (let i = 0; i < _count; i++) {
-          const _angle = Math.random() * Math.PI * 2;
-          const _len = 40 + Math.random() * 80;
-          const _curve = (Math.random() - 0.5) * 25;
-          const _perp = _angle + Math.PI / 2;
-          crumpleFolds.push({
-            x1: _lx + (Math.random() - 0.5) * 8,
-            y1: _ly + (Math.random() - 0.5) * 8,
-            cx: _lx + Math.cos(_angle) * _len * 0.5 + Math.cos(_perp) * _curve,
-            cy: _ly + Math.sin(_angle) * _len * 0.5 + Math.sin(_perp) * _curve,
-            x2: _lx + Math.cos(_angle) * _len,
-            y2: _ly + Math.sin(_angle) * _len,
-            time: _now,
-            duration: 3000,
-          });
-        }
-        ripple = { x: _lx, y: _ly, time: _now, active: true };
-      }
-    };
+    const onLeave = () => { mouseRef.current = { x: -999, y: -999 }; };
 
     window.addEventListener("mousemove", onMouse);
     window.addEventListener("click", onClick);
@@ -374,27 +360,6 @@ export default function Home() {
           ctx.fillStyle = `hsla(${s.hue}, 50%, 65%, ${s.life * 0.4})`;
           ctx.fill();
           ctx.restore();
-        }
-
-        // --- mouse trail (continuous path) ---
-        var _pt = performance.now();
-        for (var i = 1; i < pathPoints.length; i++) {
-          var cr = pathPoints[i]!;
-          var pr = pathPoints[i - 1]!;
-          var tm = _pt - cr.time;
-          if (tm > 1500) continue;
-          var lf = 1 - tm / 1500;
-          var dx = cr.x - pr.x, dy = cr.y - pr.y;
-          if (Math.sqrt(dx*dx+dy*dy) < 2) continue;
-          var ag = Math.atan2(dy, dx);
-          var px = -Math.sin(ag) * 2;
-          var py = Math.cos(ag) * 2;
-          ctx.beginPath(); ctx.moveTo(pr.x+px, pr.y+py); ctx.lineTo(cr.x+px, cr.y+py);
-          ctx.strokeStyle = "rgba(235,210,155," + (lf * 0.35) + ")";
-          ctx.lineWidth = 3; ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(pr.x-px, pr.y-py); ctx.lineTo(cr.x-px, cr.y-py);
-          ctx.strokeStyle = "rgba(155,115,55," + (lf * 0.3) + ")";
-          ctx.lineWidth = 3; ctx.stroke();
         }
 
         // --- crumple folds (paper wrinkling) ---
