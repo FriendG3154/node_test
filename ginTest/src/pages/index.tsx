@@ -8,7 +8,7 @@ interface Star {
   alpha: number; speed: number; phase: number;
 }
 
-type Shape = "circle" | "star" | "diamond";
+type Shape = "circle" | "star" | "diamond" | "hex";
 
 interface Particle {
   x: number; y: number;
@@ -56,6 +56,17 @@ function drawDiamond(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: n
   ctx.closePath();
 }
 
+function drawHex(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = i * Math.PI / 3 - Math.PI / 6;
+    const x = cx + Math.cos(a) * r;
+    const y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
 // ---------- component ----------
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -84,27 +95,27 @@ export default function Home() {
 
     // ---- stars ----
     const stars: Star[] = Array.from(
-      { length: Math.min(120, Math.floor(area() / 18000)) },
+      { length: Math.min(200, Math.floor(area() / 15000)) },
       () => ({
         x: Math.random() * W(), y: Math.random() * H(),
-        size: Math.random() * 1.2 + 0.3,
-        alpha: Math.random() * 0.5 + 0.2,
-        speed: Math.random() * 2 + 0.5,
+        size: Math.random() * 1.5 + 0.3,
+        alpha: Math.random() * 0.5 + 0.15,
+        speed: Math.random() * 1.5 + 0.3,
         phase: Math.random() * Math.PI * 2,
       })
     );
 
     // ---- particles ----
-    const shapes: Shape[] = ["circle", "star", "diamond"];
+    const shapes: Shape[] = ["circle", "star", "diamond", "hex"];
     const particles: Particle[] = Array.from(
-      { length: Math.min(40, Math.floor(area() / 35000)) },
+      { length: Math.min(50, Math.floor(area() / 30000)) },
       () => ({
         x: Math.random() * W(), y: Math.random() * H(),
         vx: (Math.random() - 0.5) * 0.5,
         vy: (Math.random() - 0.5) * 0.5 - 0.15,
-        size: Math.random() * 3 + 1.5,
+        size: Math.random() * 3.5 + 1.5,
         alpha: Math.random() * 0.4 + 0.3,
-        hue: Math.random() * 100 + 220,
+        hue: Math.random() * 60 + 160,
         shape: shapes[Math.floor(Math.random() * shapes.length)]!,
       })
     );
@@ -124,6 +135,9 @@ export default function Home() {
     let bgGrad: CanvasGradient | null = null;
     let bgW = 0; let bgH = 0;
 
+    // ---- waveform ----
+    const waveform: { x: number; y: number }[] = [];
+
     // ---- events ----
     const onMouse = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
@@ -133,15 +147,15 @@ export default function Home() {
           x: e.clientX + (Math.random() - 0.5) * 8,
           y: e.clientY + (Math.random() - 0.5) * 8,
           life: 1,
-          maxLife: 18 + Math.random() * 12,
-          size: Math.random() * 2 + 0.8,
-          hue: Math.random() * 60 + 220,
+          maxLife: 16 + Math.random() * 10,
+          size: Math.random() * 2.5 + 0.8,
+          hue: Math.random() * 40 + 180,
         });
       }
     };
     const onClick = (e: MouseEvent) => {
       ring = { x: e.clientX, y: e.clientY, progress: 0 };
-      const count = 35 + Math.floor(Math.random() * 20);
+      const count = 45 + Math.floor(Math.random() * 20);
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 3 + Math.random() * 5;
@@ -150,8 +164,8 @@ export default function Home() {
           endX: e.clientX + Math.cos(angle) * speed * 55,
           endY: e.clientY + Math.sin(angle) * speed * 55 + 40,
           progress: 0,
-          size: Math.random() * 3 + 1.5,
-          hue: Math.random() * 120 + 220,
+          size: Math.random() * 3.5 + 1.5,
+          hue: Math.random() * 60 + 180,
           shape: shapes[Math.floor(Math.random() * shapes.length)]!,
         });
       }
@@ -170,28 +184,84 @@ export default function Home() {
         const hueOff = hueState.offset;
         const mx = mouseRef.current.x;
         const my = mouseRef.current.y;
+        const now = performance.now() * 0.001;
 
         ctx.clearRect(0, 0, W(), H());
 
-        // --- cached background glow ---
+        // --- background glow (cached) ---
         if (!bgGrad || bgW !== W() || bgH !== H()) {
           bgGrad = ctx.createRadialGradient(W() * 0.5, H() * 0.5, 0, W() * 0.5, H() * 0.5, W() * 0.5);
           bgW = W(); bgH = H();
         }
-        const gh = 250 + Math.sin(hueOff * 0.017) * 15;
-        bgGrad.addColorStop(0, `hsla(${gh}, 35%, 12%, 0.45)`);
-        bgGrad.addColorStop(0.6, `hsla(${gh + 30}, 20%, 6%, 0.25)`);
+        const gh = 200 + Math.sin(hueOff * 0.017) * 20;
+        bgGrad.addColorStop(0, `hsla(${gh}, 50%, 8%, 0.5)`);
+        bgGrad.addColorStop(0.5, `hsla(${gh + 20}, 40%, 4%, 0.3)`);
         bgGrad.addColorStop(1, "rgba(7,7,18,0)");
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, W(), H());
 
+        // --- perspective grid ---
+        const vpX = W() * 0.5;
+        const vpY = H() * 0.3;
+        const gridColor = `hsla(${190 + hueOff * 0.1}, 50%, 50%, 0.06)`;
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 0.5;
+
+        // horizontal grid lines (perspective-spaced)
+        for (let i = 1; i <= 12; i++) {
+          const t = i / 12;
+          const y = vpY + (H() - vpY) * (t * t);
+          ctx.beginPath();
+          ctx.moveTo(vpX - (W() * 0.5) * t, y);
+          ctx.lineTo(vpX + (W() * 0.5) * t, y);
+          ctx.stroke();
+        }
+        // vertical grid lines (radial from VP)
+        for (let i = -6; i <= 6; i++) {
+          const angle = Math.atan2(H() - vpY, (i / 6) * W() * 0.5);
+          const endX = vpX + Math.cos(angle) * H() * 1.5;
+          const endY = vpY + Math.sin(angle) * H() * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(vpX, vpY);
+          ctx.lineTo(endX, endY);
+          ctx.stroke();
+        }
+
+        // --- HUD corner brackets ---
+        const bLen = 30;
+        const bOff = 18;
+        const bh = 190 + hueOff * 0.1;
+        ctx.strokeStyle = `hsla(${bh}, 60%, 60%, 0.2)`;
+        ctx.lineWidth = 1;
+
+        // top-left
+        ctx.beginPath(); ctx.moveTo(bOff, bOff + bLen); ctx.lineTo(bOff, bOff); ctx.lineTo(bOff + bLen, bOff); ctx.stroke();
+        // top-right
+        ctx.beginPath(); ctx.moveTo(W() - bOff - bLen, bOff); ctx.lineTo(W() - bOff, bOff); ctx.lineTo(W() - bOff, bOff + bLen); ctx.stroke();
+        // bottom-left
+        ctx.beginPath(); ctx.moveTo(bOff, H() - bOff - bLen); ctx.lineTo(bOff, H() - bOff); ctx.lineTo(bOff + bLen, H() - bOff); ctx.stroke();
+        // bottom-right
+        ctx.beginPath(); ctx.moveTo(W() - bOff - bLen, H() - bOff); ctx.lineTo(W() - bOff, H() - bOff); ctx.lineTo(W() - bOff, H() - bOff - bLen); ctx.stroke();
+
+        // bracket tick marks
+        ctx.strokeStyle = `hsla(${bh}, 50%, 55%, 0.12)`;
+        ctx.lineWidth = 0.5;
+        for (let i = 1; i <= 4; i++) {
+          const t = bOff + (bLen / 5) * i;
+          // top
+          ctx.beginPath(); ctx.moveTo(t, bOff - 3); ctx.lineTo(t, bOff + 3); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(W() - t, bOff - 3); ctx.lineTo(W() - t, bOff + 3); ctx.stroke();
+          // bottom
+          ctx.beginPath(); ctx.moveTo(t, H() - bOff - 3); ctx.lineTo(t, H() - bOff + 3); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(W() - t, H() - bOff - 3); ctx.lineTo(W() - t, H() - bOff + 3); ctx.stroke();
+        }
+
         // --- stars ---
-        const t = performance.now() * 0.001;
         for (const s of stars) {
-          const a = s.alpha * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+          const a = s.alpha * (0.5 + 0.5 * Math.sin(now * s.speed + s.phase));
           ctx.beginPath();
           ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(220,220,255,${a})`;
+          ctx.fillStyle = `rgba(180,200,255,${a})`;
           ctx.fill();
         }
 
@@ -217,22 +287,35 @@ export default function Home() {
           const h = p.hue + hueOff;
           ctx.save();
           ctx.translate(p.x, p.y);
+
+          // glow halo
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size * 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = `hsla(${h}, 70%, 60%, 0.08)`;
+          ctx.fill();
+
           if (p.shape === "star") {
             drawStar(ctx, 0, 0, p.size);
-            ctx.fillStyle = `hsla(${h},75%,62%,${p.alpha})`;
+            ctx.fillStyle = `hsla(${h}, 80%, 65%, ${p.alpha})`;
           } else if (p.shape === "diamond") {
             drawDiamond(ctx, 0, 0, p.size);
-            ctx.fillStyle = `hsla(${h + 20},65%,56%,${p.alpha})`;
+            ctx.fillStyle = `hsla(${h + 30}, 70%, 58%, ${p.alpha})`;
+          } else if (p.shape === "hex") {
+            drawHex(ctx, 0, 0, p.size);
+            ctx.fillStyle = `hsla(${h + 10}, 75%, 55%, ${p.alpha})`;
           } else {
             ctx.beginPath();
             ctx.arc(0, 0, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${h},70%,62%,${p.alpha})`;
+            ctx.fillStyle = `hsla(${h}, 75%, 62%, ${p.alpha})`;
           }
+          ctx.shadowColor = `hsla(${h}, 70%, 60%, ${p.alpha * 0.4})`;
+          ctx.shadowBlur = 8;
           ctx.fill();
+          ctx.shadowBlur = 0;
           ctx.restore();
         }
 
-        // --- connection lines ---
+        // --- connection lines (laser beam style) ---
         for (let i = 0; i < particles.length; i++) {
           const a = particles[i]!;
           for (let j = i + 1; j < particles.length; j++) {
@@ -240,15 +323,18 @@ export default function Home() {
             const dx = a.x - b.x;
             const dy = a.y - b.y;
             const d = dx * dx + dy * dy;
-            if (d < 160 * 160) {
-              const alpha = (1 - Math.sqrt(d) / 160) * 0.1;
+            if (d < 200 * 200) {
+              const alpha = (1 - Math.sqrt(d) / 200) * 0.15;
               const ah = (a.hue + b.hue) / 2 + hueOff;
               ctx.beginPath();
               ctx.moveTo(a.x, a.y);
               ctx.lineTo(b.x, b.y);
-              ctx.strokeStyle = `hsla(${ah},45%,55%,${alpha})`;
-              ctx.lineWidth = 0.5;
+              ctx.strokeStyle = `hsla(${ah}, 60%, 65%, ${alpha})`;
+              ctx.lineWidth = 0.8;
+              ctx.shadowColor = `hsla(${ah}, 60%, 65%, ${alpha * 0.5})`;
+              ctx.shadowBlur = 4;
               ctx.stroke();
+              ctx.shadowBlur = 0;
             }
           }
         }
@@ -262,8 +348,11 @@ export default function Home() {
           ctx.save();
           ctx.translate(s.x, s.y);
           drawStar(ctx, 0, 0, s.size * s.life);
-          ctx.fillStyle = `hsla(${s.hue},80%,72%,${s.life * 0.7})`;
+          ctx.fillStyle = `hsla(${s.hue}, 80%, 70%, ${s.life * 0.7})`;
+          ctx.shadowColor = `hsla(${s.hue}, 80%, 70%, ${s.life * 0.4})`;
+          ctx.shadowBlur = 6;
           ctx.fill();
+          ctx.shadowBlur = 0;
           ctx.restore();
         }
 
@@ -282,19 +371,23 @@ export default function Home() {
           const sz = bp.size * life * 0.9;
           if (bp.shape === "star") {
             drawStar(ctx, 0, 0, sz);
-            ctx.fillStyle = `hsla(${h},85%,68%,${life})`;
-            ctx.shadowColor = `hsla(${h},85%,68%,${life * 0.5})`;
-            ctx.shadowBlur = 10;
+            ctx.fillStyle = `hsla(${h}, 85%, 68%, ${life})`;
+            ctx.shadowColor = `hsla(${h}, 85%, 68%, ${life * 0.6})`;
+            ctx.shadowBlur = 14;
             ctx.fill();
             ctx.shadowBlur = 0;
           } else if (bp.shape === "diamond") {
             drawDiamond(ctx, 0, 0, sz);
-            ctx.fillStyle = `hsla(${h + 30},75%,62%,${life})`;
+            ctx.fillStyle = `hsla(${h + 30}, 75%, 62%, ${life})`;
+            ctx.fill();
+          } else if (bp.shape === "hex") {
+            drawHex(ctx, 0, 0, sz);
+            ctx.fillStyle = `hsla(${h + 10}, 80%, 58%, ${life})`;
             ctx.fill();
           } else {
             ctx.beginPath();
             ctx.arc(0, 0, sz, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${h},80%,64%,${life})`;
+            ctx.fillStyle = `hsla(${h}, 80%, 64%, ${life})`;
             ctx.fill();
           }
           ctx.restore();
@@ -307,20 +400,46 @@ export default function Home() {
           const rr = ring.progress * 260;
           ctx.beginPath();
           ctx.arc(ring.x, ring.y, rr, 0, Math.PI * 2);
-          ctx.strokeStyle = `hsla(280,70%,65%,${rl * 0.35})`;
+          ctx.strokeStyle = `hsla(190, 80%, 65%, ${rl * 0.4})`;
           ctx.lineWidth = rl * 2 + 0.5;
-          ctx.shadowColor = `hsla(280,70%,65%,${rl * 0.3})`;
-          ctx.shadowBlur = 14;
+          ctx.shadowColor = `hsla(190, 80%, 65%, ${rl * 0.4})`;
+          ctx.shadowBlur = 18;
           ctx.stroke();
           ctx.shadowBlur = 0;
         }
+
+        // --- waveform (bottom edge) ---
+        ctx.beginPath();
+        const wfLen = W() - 40;
+        const wfY = H() - 22;
+        const wfAmp = 6 + Math.sin(now * 0.5) * 2;
+        ctx.moveTo(20, wfY);
+        for (let x = 0; x <= wfLen; x += 2) {
+          const phase = (x / wfLen) * Math.PI * 4 + now * 1.5;
+          const y = wfY + Math.sin(phase) * wfAmp + Math.sin(phase * 0.5 + now) * 3;
+          ctx.lineTo(20 + x, y);
+        }
+        ctx.strokeStyle = `hsla(${190 + hueOff * 0.1}, 60%, 55%, 0.25)`;
+        ctx.lineWidth = 1;
+        ctx.shadowColor = `hsla(${190 + hueOff * 0.1}, 60%, 55%, 0.15)`;
+        ctx.shadowBlur = 6;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // waveform center line
+        ctx.beginPath();
+        ctx.moveTo(20, wfY);
+        ctx.lineTo(W() - 20, wfY);
+        ctx.strokeStyle = `hsla(${190 + hueOff * 0.1}, 40%, 40%, 0.08)`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
       },
     });
 
     // --- hue animation via anime ---
     const hueAnim = animate(hueState, {
       offset: [0, 360],
-      duration: 24000,
+      duration: 28000,
       loop: true,
       ease: "linear",
     });
@@ -343,6 +462,20 @@ export default function Home() {
         <meta name="description" content="Hello World — ginTest" />
       </Head>
       <div className="relative min-h-screen overflow-hidden bg-[#070712] font-sans selection:bg-purple-500/30">
+        {/* Scan lines overlay */}
+        <div className="pointer-events-none fixed inset-0 z-[5] opacity-[0.035]"
+             style={{
+               backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 1px, rgba(0,240,255,0.3) 1px, rgba(0,240,255,0.3) 2px)",
+               backgroundSize: "100% 3px",
+             }} />
+
+        {/* Noise grain overlay */}
+        <div className="pointer-events-none fixed inset-0 z-[6] opacity-[0.025] mix-blend-overlay"
+             style={{
+               backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+               backgroundSize: "256px 256px",
+             }} />
+
         <canvas ref={canvasRef} className="pointer-events-none fixed inset-0" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
@@ -351,29 +484,29 @@ export default function Home() {
               mounted ? "translate-y-0 scale-100 opacity-100" : "translate-y-12 scale-95 opacity-0"
             }`}
           >
-            {/* Decorative top */}
-            <div className="mb-8 flex items-center justify-center gap-2">
-              <span className="inline-block h-[1px] w-16 bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
-              <span className="inline-block h-2 w-2 rotate-45 border border-purple-400/60 bg-purple-400/10 shadow-[0_0_10px_rgba(168,130,255,0.3)]" />
-              <span className="inline-block h-[1px] w-16 bg-gradient-to-r from-transparent via-purple-400/50 to-transparent" />
+            {/* Decorative top - HUD style */}
+            <div className="mb-6 flex items-center justify-center gap-2">
+              <span className="inline-block h-[1px] w-12 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+              <span className="hud-dot inline-block h-2 w-2 rotate-45 border border-cyan-400/60 bg-cyan-400/10 shadow-[0_0_10px_rgba(0,240,255,0.3)]" />
+              <span className="inline-block h-[1px] w-12 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
             </div>
 
-            {/* Title */}
-            <h1 className="animate-gradient bg-gradient-to-r from-purple-300 via-pink-300 via-orange-200 to-cyan-300 bg-clip-text text-6xl font-extrabold tracking-tight text-transparent sm:text-7xl md:text-8xl lg:text-9xl"
-                style={{ filter: "drop-shadow(0 0 40px rgba(168,130,255,0.15)) drop-shadow(0 0 80px rgba(168,130,255,0.08))" }}>
+            {/* Title - cyan/magenta gradient */}
+            <h1 className="animate-gradient bg-gradient-to-r from-cyan-300 via-blue-300 via-indigo-300 to-magenta-300 bg-clip-text text-6xl font-extrabold tracking-tight text-transparent sm:text-7xl md:text-8xl lg:text-9xl"
+                style={{ filter: "drop-shadow(0 0 60px rgba(0,240,255,0.15)) drop-shadow(0 0 100px rgba(100,0,255,0.1))" }}>
               Hello World
             </h1>
 
-            {/* Subtitle - shimmer */}
-            <p className="relative mt-5 overflow-hidden text-base font-light tracking-[0.3em] text-white/30 sm:text-lg">
+            {/* Subtitle */}
+            <p className="relative mt-5 overflow-hidden text-base font-light tracking-[0.3em] text-white/25 sm:text-lg">
               <span className="shimmer-text inline-block">GINTEST</span>
             </p>
 
             {/* Bottom decorative */}
             <div className="mt-8 flex items-center justify-center gap-2">
-              <span className="inline-block h-[1px] w-12 bg-gradient-to-r from-transparent to-purple-400/30" />
-              <span className="pulse-dot inline-block h-1.5 w-1.5 rotate-45 border border-purple-400/50 bg-purple-400/20 shadow-[0_0_8px_rgba(168,130,255,0.3)]" />
-              <span className="inline-block h-[1px] w-12 bg-gradient-to-l from-transparent to-purple-400/30" />
+              <span className="inline-block h-[1px] w-12 bg-gradient-to-r from-transparent to-cyan-400/30" />
+              <span className="pulse-dot inline-block h-1.5 w-1.5 rotate-45 border border-cyan-400/50 bg-cyan-400/20 shadow-[0_0_8px_rgba(0,240,255,0.3)]" />
+              <span className="inline-block h-[1px] w-12 bg-gradient-to-l from-transparent to-cyan-400/30" />
             </div>
 
             <p className="mt-8 text-[10px] tracking-[0.4em] text-white/10">
@@ -392,8 +525,8 @@ export default function Home() {
           100% { background-position: 50% 0%; }
         }
         .animate-gradient {
-          background-size: 300% 300%;
-          animation: gradient 8s ease infinite;
+          background-size: 400% 400%;
+          animation: gradient 10s ease infinite;
         }
 
         @keyframes shimmer {
@@ -404,24 +537,33 @@ export default function Home() {
           background: linear-gradient(
             90deg,
             rgba(255,255,255,0) 0%,
-            rgba(255,255,255,0) 40%,
-            rgba(255,255,255,0.6) 50%,
-            rgba(255,255,255,0) 60%,
+            rgba(255,255,255,0) 35%,
+            rgba(0,240,255,0.7) 50%,
+            rgba(255,0,228,0.7) 55%,
+            rgba(255,255,255,0) 65%,
             rgba(255,255,255,0) 100%
           );
           background-size: 200% 100%;
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          animation: shimmer 4s ease-in-out infinite;
+          animation: shimmer 5s ease-in-out infinite;
         }
 
         @keyframes pulse-dot {
-          0%, 100% { opacity: 0.4; box-shadow: 0 0 6px rgba(168,130,255,0.2); }
-          50%      { opacity: 0.8; box-shadow: 0 0 14px rgba(168,130,255,0.5); }
+          0%, 100% { opacity: 0.4; box-shadow: 0 0 6px rgba(0,240,255,0.2); }
+          50%      { opacity: 0.8; box-shadow: 0 0 14px rgba(0,240,255,0.5); }
         }
         .pulse-dot {
           animation: pulse-dot 3s ease-in-out infinite;
+        }
+
+        @keyframes hud-dot-pulse {
+          0%, 100% { box-shadow: 0 0 6px rgba(0,240,255,0.2); }
+          50%      { box-shadow: 0 0 18px rgba(0,240,255,0.6); }
+        }
+        .hud-dot {
+          animation: hud-dot-pulse 4s ease-in-out infinite;
         }
       `}</style>
     </>
