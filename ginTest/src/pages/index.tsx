@@ -42,13 +42,13 @@ function drawFold(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: num
   const px = -Math.sin(angle) * 1.5;
   const py = Math.cos(angle) * 1.5;
   ctx.beginPath(); ctx.moveTo(x1 + px, y1 + py); ctx.lineTo(x2 + px, y2 + py);
-  ctx.strokeStyle = "rgba(235,210,155,0.10)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = "rgba(250,220,170,0.10)"; ctx.lineWidth = 1; ctx.stroke();
   ctx.beginPath(); ctx.moveTo(x1 - px, y1 - py); ctx.lineTo(x2 - px, y2 - py);
   ctx.strokeStyle = "rgba(160,120,55,0.10)"; ctx.lineWidth = 1; ctx.stroke();
 }
 
 function generatePaper(bgCtx: CanvasRenderingContext2D, w: number, h: number) {
-  const base = [210, 175, 100];
+  const base = [242, 218, 168];
   bgCtx.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`;
   bgCtx.fillRect(0, 0, w, h);
 
@@ -198,7 +198,7 @@ export default function Home() {
         vy: (Math.random() - 0.5) * 0.3 - 0.08,
         size: Math.random() * 4 + 2.5,
         alpha: Math.random() * 0.3 + 0.15,
-        hue: Math.random() * 25 + 15,
+        hue: [350, 180, 45, 280][Math.floor(Math.random() * 4)]! + (Math.random() - 0.5) * 20,
         shape: shapes[Math.floor(Math.random() * shapes.length)]!,
       })
     );
@@ -208,6 +208,12 @@ export default function Home() {
     let sparkCounter = 0;
     let lastPathTime = 0;
     const pathPoints: { x: number; y: number; time: number }[] = [];
+    const blobs: { x: number; y: number; r: number; vx: number; vy: number; hue: number; alpha: number }[] = [
+      { x: 0.2, y: 0.3, r: 140, vx: 0.12, vy: 0.08, hue: 350, alpha: 0.08 },
+      { x: 0.7, y: 0.6, r: 110, vx: -0.08, vy: 0.15, hue: 185, alpha: 0.07 },
+      { x: 0.4, y: 0.8, r: 160, vx: 0.1, vy: -0.06, hue: 45, alpha: 0.06 },
+      { x: 0.8, y: 0.2, r: 100, vx: -0.14, vy: 0.1, hue: 275, alpha: 0.07 },
+    ].map(b => ({ ...b, x: b.x * W(), y: b.y * H() }));
 
     // ---- burst ----
     const crumpleFolds: CrumpleFold[] = [];
@@ -226,7 +232,7 @@ export default function Home() {
           y: e.clientY + (Math.random() - 0.5) * 6,
           life: 1, maxLife: 12 + Math.random() * 8,
           size: Math.random() * 1.5 + 0.4,
-          hue: Math.random() * 15 + 30,
+          hue: [350, 180, 45, 280][Math.floor(Math.random() * 4)]! + (Math.random() - 0.5) * 15,
         });
       }
       // record mouse trail path
@@ -323,6 +329,18 @@ export default function Home() {
         if (paperDirty) updatePaper();
         ctx.drawImage(bgCanvas, 0, 0);
 
+        // --- floating blobs ---
+        for (const b of blobs) {
+          b.x += b.vx; b.y += b.vy;
+          if (b.x < -b.r || b.x > W() + b.r) b.vx *= -1;
+          if (b.y < -b.r || b.y > H() + b.r) b.vy *= -1;
+          var bg = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          bg.addColorStop(0, "hsla(" + (b.hue + hueOff * 0.15) + ",70%,65%," + b.alpha + ")");
+          bg.addColorStop(1, "hsla(" + (b.hue + hueOff * 0.15) + ",70%,65%,0)");
+          ctx.fillStyle = bg;
+          ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+        }
+
         // --- dust motes ---
         const t = performance.now() * 0.001;
         for (const s of stars) {
@@ -407,7 +425,7 @@ export default function Home() {
           var px = -Math.sin(ag) * 2.5;
           var py = Math.cos(ag) * 2;
           ctx.beginPath(); ctx.moveTo(pr.x-px, pr.y-py); ctx.lineTo(cr.x-px, cr.y-py);
-          ctx.strokeStyle = "rgba(100,60,20," + (lf * 0.5) + ")";
+          ctx.strokeStyle = "hsla(" + (350 + hueOff * 0.3 + Math.sin(cr.x * 0.01 + _pt * 0.1) * 30) + ",80%,60%," + (lf * 0.5) + ")";
           ctx.lineWidth = Math.min(7, 2 + ln * 0.08); ctx.stroke();
         }
 
@@ -481,7 +499,7 @@ export default function Home() {
         <title>Hello World ✦ ginTest</title>
         <meta name="description" content="Hello World — ginTest" />
       </Head>
-      <div className="relative min-h-screen overflow-hidden bg-[#EDE0CC] font-sans selection:bg-yellow-700/25">
+      <div className="relative min-h-screen overflow-hidden bg-[#F0E6D6] font-sans selection:bg-orange-400/30">
         {/* Paper grain overlay */}
         <div className="pointer-events-none fixed inset-0 z-[5] opacity-[0.055] mix-blend-multiply"
              style={{
@@ -491,28 +509,28 @@ export default function Home() {
         {/* Fiber lines */}
         <div className="pointer-events-none fixed inset-0 z-[4] opacity-[0.012] mix-blend-multiply"
              style={{
-               backgroundImage: "repeating-linear-gradient(75deg, transparent, transparent 30px, rgba(140,100,50,0.4) 30px, rgba(140,100,50,0.4) 31px)",
+               backgroundImage: "repeating-linear-gradient(75deg, transparent, transparent 30px, rgba(200,140,70,0.25) 30px, rgba(200,140,70,0.25) 31px)",
              }} />
 
         <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-[3]" />
 
         <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
           <div
-            className={`text-center transition-all duration-1500 cubic-bezier(0.16, 1, 0.3, 1) ${
+            className={`text-center transition-all duration-1500 cubic-bezier(0.34, 1.56, 0.64, 1) ${
               mounted ? "translate-y-0 scale-100 opacity-100" : "translate-y-12 scale-95 opacity-0"
             }`}
           >
             {/* Top accent */}
             <div className="mb-6 flex items-center justify-center gap-3">
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-yellow-600/60 to-transparent" />
-              <span className="top-dot inline-block h-2.5 w-2.5 rotate-45 border border-yellow-600/70 bg-yellow-600/20 shadow-[0_0_8px_rgba(215,185,115,0.3)]" />
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-yellow-600/60 to-transparent" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-orange-400/60 to-transparent" />
+              <span className="top-dot inline-block h-2.5 w-2.5 rotate-45 border border-orange-400/70 bg-orange-400/20 shadow-[0_0_8px_rgba(230,160,80,0.3)]" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent via-orange-400/60 to-transparent" />
             </div>
 
             {/* Title */}
-            <h1 className="text-6xl font-bold tracking-tight text-[#2D1E08] sm:text-7xl md:text-8xl lg:text-9xl"
+            <h1 className="text-6xl font-bold tracking-tight text-[#3D1A00] sm:text-7xl md:text-8xl lg:text-9xl"
                 style={{
-                  textShadow: "0 1px 0 rgba(220,200,160,0.3), 0 3px 6px rgba(60,40,10,0.12)",
+                  textShadow: "0 1px 0 rgba(255,210,160,0.4), 0 3px 8px rgba(200,80,50,0.15)",
                   letterSpacing: "-0.02em",
                 }}>
               Hello World
@@ -525,9 +543,9 @@ export default function Home() {
 
             {/* Bottom accent */}
             <div className="mt-10 flex items-center justify-center gap-3">
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent to-yellow-600/50" />
-              <span className="bottom-dot inline-block h-2 w-2 rotate-45 border border-yellow-600/60 bg-yellow-600/25 shadow-[0_0_6px_rgba(215,185,115,0.2)]" />
-              <span className="inline-block h-[1px] w-14 bg-gradient-to-l from-transparent to-yellow-600/50" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-r from-transparent to-orange-400/50" />
+              <span className="bottom-dot inline-block h-2 w-2 rotate-45 border border-orange-400/60 bg-orange-400/25 shadow-[0_0_6px_rgba(230,160,80,0.2)]" />
+              <span className="inline-block h-[1px] w-14 bg-gradient-to-l from-transparent to-orange-400/50" />
             </div>
           </div>
         </div>
@@ -537,12 +555,12 @@ export default function Home() {
         .shimmer-text {
           background: linear-gradient(
             90deg,
-            rgba(130,95,50,0.85) 0%,
-            rgba(130,95,50,0.85) 25%,
+            rgba(200,120,60,0.75) 0%,
+            rgba(200,120,60,0.75) 25%,
             rgba(255,235,195,0.95) 48%,
             rgba(255,235,195,0.95) 52%,
-            rgba(130,95,50,0.85) 75%,
-            rgba(130,95,50,0.85) 100%
+            rgba(180,100,50,0.75) 75%,
+            rgba(180,100,50,0.75) 100%
           );
           background-size: 250% 100%;
           background-clip: text;
@@ -558,8 +576,8 @@ export default function Home() {
         }
 
         @keyframes dot-pulse {
-          0%, 100% { opacity: 0.5; box-shadow: 0 0 6px rgba(215,185,115,0.2); }
-          50%      { opacity: 0.9; box-shadow: 0 0 16px rgba(215,185,115,0.45); }
+          0%, 100% { opacity: 0.5; box-shadow: 0 0 6px rgba(230,160,80,0.2); }
+          50%      { opacity: 0.9; box-shadow: 0 0 16px rgba(230,160,80,0.45); }
         }
         .top-dot, .bottom-dot {
           animation: dot-pulse 4s ease-in-out infinite;
